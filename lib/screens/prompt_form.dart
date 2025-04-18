@@ -121,7 +121,23 @@ class _PromptFormScreenState extends State<PromptFormScreen> {
                       Text('➕ Crear nuevo contexto'),
                     ],
                   )
-                      : Text(c),
+                      : RichText(
+                    text: TextSpan(
+                      style: const TextStyle(color: Colors.black),
+                      children: [
+                        TextSpan(
+                          text: c.split(' ').first + ' ', // Primera palabra
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent, // Color que resalta
+                          ),
+                        ),
+                        TextSpan(
+                          text: c.substring(c.split(' ').first.length), // Resto del texto
+                        ),
+                      ],
+                    ),
+                  ),
                 ))
                     .toList(),
                 onChanged: (value) {
@@ -137,7 +153,8 @@ class _PromptFormScreenState extends State<PromptFormScreen> {
                     _nuevoProposito = null;
                   });
                 },
-                validator: (value) => value == null || value.trim().isEmpty ? 'Selecciona un contexto' : null,
+                validator: (value) =>
+                value == null || value.trim().isEmpty ? 'Selecciona un contexto' : null,
               ),
 
               //...
@@ -179,7 +196,23 @@ class _PromptFormScreenState extends State<PromptFormScreen> {
                       Text('➕ Crear nuevo propósito'),
                     ],
                   )
-                      : Text(p),
+                      : RichText(
+                    text: TextSpan(
+                      style: const TextStyle(color: Colors.black),
+                      children: [
+                        TextSpan(
+                          text: p.split(' ').first + ' ', // Primera palabra
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent, // Resaltado
+                          ),
+                        ),
+                        TextSpan(
+                          text: p.substring(p.split(' ').first.length), // Resto del texto
+                        ),
+                      ],
+                    ),
+                  ),
                 ))
                     .toList(),
                 onChanged: (value) {
@@ -188,7 +221,8 @@ class _PromptFormScreenState extends State<PromptFormScreen> {
                     _nuevoProposito = null;
                   });
                 },
-                validator: (value) => value == null ? 'Selecciona un propósito' : null,
+                validator: (value) =>
+                value == null ? 'Selecciona un propósito' : null,
               ),
 
               //...

@@ -76,36 +76,101 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
         const SizedBox(height: 16),
 
         // 🔹 Dropdown: Contexto
+
+        //...
+
         DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: 'Contexto de uso'),
+          decoration: InputDecoration(
+            labelText: 'Contexto de uso',
+            filled: true,
+            fillColor: contextoSeleccionado == null || contextoSeleccionado!.isEmpty
+                ? Colors.red[100]  // Rojo si está vacío
+                : contextoSeleccionado!.length > 2
+                ? Colors.green[100]  // Verde si tiene más de dos caracteres
+                : Colors.yellow[100], // Amarillo si tiene menos de tres caracteres
+          ),
           value: contextoSeleccionado,
-          items: contextos
-              .map((ctx) => DropdownMenuItem(value: ctx, child: Text(ctx)))
-              .toList(),
+          items: contextos.map((ctx) {
+            final partes = ctx.trim().split(' ');
+            final primera = partes.isNotEmpty ? partes.first : ctx;
+            final resto = partes.length > 1 ? ctx.substring(primera.length) : '';
+
+            return DropdownMenuItem(
+              value: ctx,
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.black),
+                  children: [
+                    TextSpan(
+                      text: '$primera ',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent, // Resaltado
+                      ),
+                    ),
+                    TextSpan(text: resto),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
           onChanged: (value) {
             setState(() {
               contextoSeleccionado = value;
-              propositoSeleccionado = null; // Reiniciar selección
+              propositoSeleccionado = null;
               propositos = propositosPorContexto[value] ?? [];
               propositos.sort();
+              promptsEncontrados = [];
             });
           },
         ),
-        const SizedBox(height: 12),
 
-        // 🔹 Dropdown: Propósito
+        //...
+
         DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: 'Propósito de uso'),
+          decoration: InputDecoration(
+            labelText: 'Propósito de uso',
+            filled: true,
+            fillColor: propositoSeleccionado == null || propositoSeleccionado!.isEmpty
+                ? Colors.red[100]  // Rojo si está vacío
+                : propositoSeleccionado!.length > 2
+                ? Colors.green[100]  // Verde si tiene más de dos caracteres
+                : Colors.yellow[100], // Amarillo si tiene menos de tres caracteres
+          ),
           value: propositoSeleccionado,
-          items: propositos
-              .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-              .toList(),
+          items: propositos.map((p) {
+            final partes = p.trim().split(' ');
+            final primera = partes.isNotEmpty ? partes.first : p;
+            final resto = partes.length > 1 ? p.substring(primera.length) : '';
+
+            return DropdownMenuItem(
+              value: p,
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.black),
+                  children: [
+                    TextSpan(
+                      text: '$primera ', // Primera palabra resaltada
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent, // Resaltado
+                      ),
+                    ),
+                    TextSpan(text: resto), // Resto del texto
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
           onChanged: (value) {
             setState(() {
               propositoSeleccionado = value;
             });
+            if (value != null) buscarPrompts();  // Se ejecuta solo si el valor no es nulo
           },
         ),
+
+        //..
         const SizedBox(height: 16),
 
         // 🔹 Botón de búsqueda
