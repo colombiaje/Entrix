@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/appscript_service.dart';
+import 'package:flutter/services.dart';
 
 class PromptConsultaWidget extends StatefulWidget {
   const PromptConsultaWidget({super.key});
@@ -166,19 +167,13 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
             setState(() {
               propositoSeleccionado = value;
             });
-            if (value != null) buscarPrompts();  // Se ejecuta solo si el valor no es nulo
+            if (value != null) buscarPrompts();  // Se ejecuta solo si el valor no es nulo y muestra el Campo tecto del prompt
           },
         ),
 
         //..
         const SizedBox(height: 16),
-
-        // 🔹 Botón de búsqueda
-        ElevatedButton(
-          onPressed: buscarPrompts,
-          child: const Text('Buscar Prompts'),
-        ),
-
+        //quite el boton
         const SizedBox(height: 20),
 
         // 🔹 Resultados
@@ -194,7 +189,60 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
                 margin: const EdgeInsets.symmetric(vertical: 6),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text(promptTexto),
+                  //...
+
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SelectableText(
+                          promptTexto,
+                          style: const TextStyle(color: Colors.black, fontSize: 17),
+
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+
+                        //...
+
+                        child: TextButton.icon(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.green[100],
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: promptTexto));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Texto copiado al portapapeles')),
+                            );
+                          },
+                          icon: const Icon(Icons.copy, size: 18),
+                          label: const Text(
+                            'Copiar',
+                            textAlign: TextAlign.justify,
+                            style: TextStyle(
+                              color: Colors.blueAccent,
+                              fontWeight: FontWeight.bold,),
+                          ),
+                        ),
+
+                        //...
+                      ),
+                    ],
+                  ),
+
+
+                  //...
                 ),
               );
             }).toList(),

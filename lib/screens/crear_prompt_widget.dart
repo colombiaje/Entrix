@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/appscript_service.dart';
-import 'prompt_consulta_widget.dart';
+import 'consulta_prompt_widget.dart';
 
 class PromptFormScreen extends StatefulWidget {
   const PromptFormScreen({super.key});

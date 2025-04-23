@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/prompt_form.dart';
+import 'screens/crear_prompt_widget.dart';
 
 void main() {
   runApp(const ZtorePromptApp());
