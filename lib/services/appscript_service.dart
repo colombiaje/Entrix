@@ -1,8 +1,9 @@
-import 'dart:convert';
+import 'dart:convert'; // Asegúrate de tener esta importación
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart'; // Importar para debugPrint
 
 // ✅ URL final confirmada como funcional
-const String baseUrl = 'https://script.google.com/macros/s/AKfycbxDz7ixsztfFkiDKz2MnByyDUl5d4evVvvorJ_6_m6BA5GuZ3sq1VS2t4Fpi7K5dyvs/exec';
+const String baseUrl = 'https://script.google.com/macros/s/AKfycbyXd7ICUEHJHQdz-z4PdpP4ux0y9LV7picqOOR2E4KSmsWkp5XEHv_0AY8f6cnI0co/exec';
 
 /// 🔹 Enviar un nuevo prompt (acción: 'addPrompt') usando POST
 Future<String> enviarPrompt({
@@ -26,9 +27,12 @@ Future<String> enviarPrompt({
     if (response.statusCode == 200) {
       return response.body;
     } else {
+      // Aunque no sea 200, podríamos imprimir el cuerpo de la respuesta por si hay info útil
+      debugPrint('Error sending prompt: Status ${response.statusCode}, Body: ${response.body}');
       return 'Error: ${response.statusCode}';
     }
   } catch (e) {
+    debugPrint('Exception sending prompt: $e');
     return 'Excepción: $e';
   }
 }
@@ -42,14 +46,19 @@ Future<Map<String, List<String>>> obtenerOpcionesUnicas() async {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      // Asegurarse de que las claves existen y son del tipo correcto antes de convertir a List<String>
       return {
-        'contexto': List<String>.from(data['contexto']),
-        'proposito': List<String>.from(data['proposito']),
+        'contexto': (data != null && data is Map && data.containsKey('contexto') && data['contexto'] is List)
+            ? List<String>.from(data['contexto']) : [],
+        'proposito': (data != null && data is Map && data.containsKey('proposito') && data['proposito'] is List)
+            ? List<String>.from(data['proposito']) : [],
       };
     } else {
+      debugPrint('Error getting unique options: Status ${response.statusCode}, Body: ${response.body}');
       throw Exception('Error del servidor: ${response.statusCode}');
     }
   } catch (e) {
+    debugPrint('Exception getting unique options: $e');
     throw Exception('Error al obtener opciones únicas: $e');
   }
 }
@@ -63,18 +72,27 @@ Future<Map<String, List<String>>> obtenerOpcionesUnicasAgrupadas() async {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final Map<String, dynamic> rawMap = data['propositoPorContexto'];
+      // Asegurarse de que la clave existe y es un mapa
+      final Map<String, dynamic> rawMap = (data != null && data is Map && data.containsKey('propositoPorContexto') && data['propositoPorContexto'] is Map)
+          ? data['propositoPorContexto'] : {}; // Retorna un mapa vacío si no es válido
 
       Map<String, List<String>> mapa = {};
       rawMap.forEach((key, value) {
-        mapa[key] = List<String>.from(value);
+        // Asegurarse de que el valor asociado a la clave es una lista antes de convertir
+        if (value is List) {
+          mapa[key] = List<String>.from(value);
+        } else {
+          mapa[key] = []; // Retorna lista vacía si el valor no es una lista
+        }
       });
 
       return mapa;
     } else {
+      debugPrint('Error getting grouped options: Status ${response.statusCode}, Body: ${response.body}');
       throw Exception('Error del servidor: ${response.statusCode}');
     }
   } catch (e) {
+    debugPrint('Exception getting grouped options: $e');
     throw Exception('Error al obtener opciones: $e');
   }
 }
@@ -84,19 +102,31 @@ Future<List<Map<String, dynamic>>> consultarPromptsPorContextoYProposito(
   final uri = Uri.parse(
       '$baseUrl?action=queryPrompts&contextoUso=$contexto&propositoUso=$proposito');
 
-  final response = await http.get(uri);
+  try {
+    final response = await http.get(uri);
 
-  if (response.statusCode == 200) {
-    final List<dynamic> jsonData = jsonDecode(response.body);
-    return jsonData.map<Map<String, dynamic>>((item) => Map<String, dynamic>.from(item)).toList();
-  } else {
-    throw Exception('Error al consultar prompts');
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonData = jsonDecode(response.body);
+      // Asegurarse de que la respuesta decodificada es una lista antes de mapear
+      if (jsonData is List) {
+        return jsonData.map<Map<String, dynamic>>((item) => Map<String, dynamic>.from(item)).toList();
+      } else {
+        debugPrint('Query Prompts: Response body is not a List. Body: ${response.body}');
+        return []; // Retorna lista vacía si no es una lista
+      }
+    } else {
+      debugPrint('Error consulting prompts: Status ${response.statusCode}, Body: ${response.body}');
+      throw Exception('Error al consultar prompts');
+    }
+  } catch (e) {
+    debugPrint('Exception consulting prompts: $e');
+    throw Exception('Error al consultar prompts: $e');
   }
 }
 
 //Agregado por cambio del Script para estas dos funciones.
 
-/// ✅ NUEVO: Actualizar un prompt por ID
+/// ✅ NUEVO: Actualizar un prompt por ID (MODIFICADO PARA DEPURACIÓN)
 Future<bool> actualizarPrompt({
   required String id,
   required String nuevoTexto,
@@ -107,17 +137,113 @@ Future<bool> actualizarPrompt({
     'nuevoTexto': nuevoTexto,
   });
 
-  return response.statusCode == 200;
+  // --- Inicio de la Sección de Depuración Temporal ---
+  // Imprime el código de estado y el cuerpo completo de la respuesta de Appscript
+  debugPrint('--- Appscript Response Debug ---');
+  debugPrint('Response Status Code: ${response.statusCode}');
+  debugPrint('Response Body: ${response.body}');
+  debugPrint('--- End Appscript Response Debug ---');
+  // --- Fin de la Sección de Depuración Temporal ---
+
+
+  // Analizamos la respuesta JSON del backend para determinar el éxito y ver los mensajes/logs
+  if (response.statusCode == 200) {
+    try {
+      // Intentamos decodificar la respuesta JSON
+      final responseData = jsonDecode(response.body);
+
+      // Verificamos la clave 'success' que esperamos del script de Appscript
+      // Añadimos verificaciones robustas para evitar errores si la respuesta no es un mapa o no tiene la clave
+      if (responseData != null && responseData is Map && responseData.containsKey('success') && responseData['success'] == true) {
+        debugPrint('Backend reported success = true.');
+        // Opcional: si el script incluyó un mensaje en la respuesta
+        if(responseData.containsKey('message') && responseData['message'] != null) {
+          debugPrint('Backend message: ${responseData['message']}');
+        }
+        // Opcional: si el script incluyó los logs en la respuesta, imprímelos
+        if(responseData.containsKey('logs') && responseData['logs'] != null) {
+          debugPrint('Backend logs: ${responseData['logs']}');
+        }
+        return true; // Indica éxito basado en la respuesta JSON del backend
+      } else {
+        // Si la respuesta JSON no tiene success: true, o falta la clave
+        debugPrint('Backend did not report success = true.');
+        if(responseData != null && responseData is Map && responseData.containsKey('message') && responseData['message'] != null) {
+          debugPrint('Backend error message: ${responseData['message']}');
+        }
+        if(responseData != null && responseData is Map && responseData.containsKey('logs') && responseData['logs'] != null) {
+          debugPrint('Backend logs: ${responseData['logs']}');
+        } else {
+          // Si la respuesta no tiene ni success=true ni un mensaje/logs claro, mostramos el cuerpo crudo
+          debugPrint('Backend response structure unexpected. Raw body: ${response.body}');
+        }
+        return false; // Indica fallo basado en la respuesta JSON del backend
+      }
+    } catch (e) {
+      // Si hubo un error al decodificar el JSON (por ejemplo, si la respuesta no es JSON)
+      debugPrint('Error parsing backend response JSON: $e');
+      debugPrint('Raw response body was: ${response.body}'); // Vuelve a imprimir el cuerpo crudo por si acaso
+      // Considera mostrar un error genérico al usuario si ocurre esto (respuesta inesperada del servidor)
+      return false; // Fallo al procesar la respuesta del backend
+    }
+  } else {
+    // Si el código de estado HTTP no fue 200 (ej: 404, 500, etc.)
+    debugPrint('HTTP Error Status Code: ${response.statusCode}');
+    // Imprimir el cuerpo de la respuesta aunque no sea 200, por si contiene detalles del error
+    debugPrint('Raw response body: ${response.body}');
+    // Considera mostrar un error de conexión o servidor al usuario
+    return false; // Indica fallo basado en el código de estado HTTP
+  }
 }
 
 /// ✅ NUEVO: Eliminar un prompt por ID
+
 Future<bool> eliminarPrompt({required String id}) async {
+  // Implementación similar a actualizarPrompt, pero para eliminar
+  // Es buena práctica también analizar la respuesta JSON del backend para confirmar el éxito.
   final response = await http.post(Uri.parse(baseUrl), body: {
     'action': 'deletePrompt',
-    'idPrompt': id,
+    // CAMBIO AQUI: Cambiar 'idPrompt' a 'id' para coincidir con el script de Apps Script
+    'id': id, // <--- **CAMBIO IMPORTANTE**
   });
 
-  return response.statusCode == 200;
+  // --- Inicio de la Sección de Depuración Temporal ---
+  debugPrint('--- Appscript Delete Response Debug ---');
+  debugPrint('Response Status Code: ${response.statusCode}');
+  debugPrint('Response Body: ${response.body}');
+  debugPrint('--- End Appscript Delete Response Debug ---');
+  // --- Fin de la Sección de Depuración Temporal ---
+
+
+  if (response.statusCode == 200) {
+    try {
+      final responseData = jsonDecode(response.body);
+      if (responseData != null && responseData is Map && responseData.containsKey('success') && responseData['success'] == true) {
+        debugPrint('Backend reported delete success = true.');
+        if(responseData.containsKey('message') && responseData['message'] != null) {
+          debugPrint('Backend message: ${responseData['message']}');
+        }
+        return true;
+      } else {
+        debugPrint('Backend reported delete success = false.');
+        if(responseData != null && responseData is Map && responseData.containsKey('message') && responseData['message'] != null) {
+          debugPrint('Backend error message: ${responseData['message']}');
+        }
+        if(responseData != null && responseData is Map && responseData.containsKey('logs') && responseData['logs'] != null) {
+          debugPrint('Backend logs: ${responseData['logs']}');
+        } else {
+          debugPrint('Backend delete response structure unexpected. Raw body: ${response.body}');
+        }
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error parsing backend delete response JSON: $e');
+      debugPrint('Raw response body was: ${response.body}');
+      return false;
+    }
+  } else {
+    debugPrint('HTTP Error Delete Status Code: ${response.statusCode}');
+    debugPrint('Raw response body: ${response.body}');
+    return false;
+  }
 }
-
-
