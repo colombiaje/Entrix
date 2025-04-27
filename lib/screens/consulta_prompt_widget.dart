@@ -97,26 +97,19 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
         return;
       }
 
-      debugPrint('👉 Intentando actualizar prompt: ID=$id, Texto="$nuevoTexto"');
-
       final exito = await actualizarPrompt(id: id, nuevoTexto: nuevoTexto);
       if (exito) {
-        debugPrint('✅ Prompt actualizado exitosamente. Refrescando...');
         await buscarPrompts();
-        debugPrint('📋 Prompts después de refrescar: ${promptsEncontrados.map((e) => e['prompt'])}');
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Prompt actualizado correctamente')),
         );
       } else {
-        debugPrint('❌ Falló la actualización del prompt');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error al actualizar el prompt')),
         );
       }
     }
   }
-
 
   Future<void> _confirmarEliminacion(String id) async {
     final confirmado = await showDialog<bool>(
@@ -164,9 +157,19 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
             ),
             value: contextoSeleccionado,
             items: contextos.map((ctx) {
+              final primeraPalabra = ctx.split(' ').first;
+              final resto = ctx.split(' ').skip(1).join(' ');
               return DropdownMenuItem(
                 value: ctx,
-                child: Text(ctx),
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(color: Colors.black),
+                    children: [
+                      TextSpan(text: '$primeraPalabra ', style: const TextStyle(color: Colors.blueAccent)),
+                      TextSpan(text: resto),
+                    ],
+                  ),
+                ),
               );
             }).toList(),
             onChanged: (value) {
@@ -187,7 +190,22 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
               fillColor: propositoSeleccionado == null ? Colors.red[100] : Colors.green[100],
             ),
             value: propositoSeleccionado,
-            items: propositos.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+            items: propositos.map((p) {
+              final primeraPalabra = p.split(' ').first;
+              final resto = p.split(' ').skip(1).join(' ');
+              return DropdownMenuItem(
+                value: p,
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(color: Colors.black),
+                    children: [
+                      TextSpan(text: '$primeraPalabra ', style: const TextStyle(color: Colors.blueAccent)),
+                      TextSpan(text: resto),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
             onChanged: (value) {
               setState(() {
                 propositoSeleccionado = value;
@@ -196,69 +214,78 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
             },
           ),
           const SizedBox(height: 20),
-          if (cargando)
-            const Center(child: CircularProgressIndicator())
-          else if (promptsEncontrados.isNotEmpty)
-            Column(
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            child: cargando
+                ? const Center(child: CircularProgressIndicator())
+                : promptsEncontrados.isNotEmpty
+                ? Column(
+              key: const ValueKey('listado'),
               crossAxisAlignment: CrossAxisAlignment.start,
               children: promptsEncontrados.map((fila) {
                 final promptTexto = fila['prompt'];
                 final id = fila['id'].toString();
-                return Card(
-                  elevation: 2,
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeIn,
                   margin: const EdgeInsets.symmetric(vertical: 6),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green[100],
-                            borderRadius: BorderRadius.circular(8),
+                  child: Card(
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.green[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: SelectableText(
+                              promptTexto,
+                              style: const TextStyle(color: Colors.black, fontSize: 17),
+                            ),
                           ),
-                          child: SelectableText(
-                            promptTexto,
-                            style: const TextStyle(color: Colors.black, fontSize: 17),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: promptTexto));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Texto copiado al portapapeles')),
+                                  );
+                                },
+                                icon: const Icon(Icons.copy, size: 18),
+                                label: const Text('Copiar'),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                onPressed: () => _mostrarDialogoEdicion(id, promptTexto),
+                                icon: const Icon(Icons.edit, size: 18),
+                                label: const Text('Editar'),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                onPressed: () => _confirmarEliminacion(id),
+                                icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                                label: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton.icon(
-                              onPressed: () {
-                                Clipboard.setData(ClipboardData(text: promptTexto));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Texto copiado al portapapeles')),
-                                );
-                              },
-                              icon: const Icon(Icons.copy, size: 18),
-                              label: const Text('Copiar'),
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton.icon(
-                              onPressed: () => _mostrarDialogoEdicion(id, promptTexto),
-                              icon: const Icon(Icons.edit, size: 18),
-                              label: const Text('Editar'),
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton.icon(
-                              onPressed: () => _confirmarEliminacion(id),
-                              icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-                              label: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
               }).toList(),
             )
-          else if (contextoSeleccionado != null && propositoSeleccionado != null)
-              const Text('No se encontraron prompts con esos filtros.'),
+                : contextoSeleccionado != null && propositoSeleccionado != null
+                ? const Text('No se encontraron prompts con esos filtros.')
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );

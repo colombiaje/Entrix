@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // Importar para debugPrint y kDebugMode
 
 // ✅ URL final confirmada como funcional
-//const String baseUrl = 'https://script.google.com/macros/s/AKfycbw91vd-tqIxM5c2hUu5EhARibTTzJDYqS6jpi-KjfpPzBLyzRsxg6EnLhbjjrZ-EiM/exec';
 const String baseUrl = 'https://script.google.com/macros/s/AKfycbw91vd-tqIxM5c2hUu5EhARibTTzJDYqS6jpi_KjfpPzBLyzRsxg6EnLhbjjrZ-EiM/exec';
 
 /// 🔹 Enviar un nuevo prompt (acción: 'addPrompt') usando POST
