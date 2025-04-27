@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // Importar para debugPrint y kDebugMode
 
 // ✅ URL final confirmada como funcional
-const String baseUrl = 'https://script.google.com/macros/s/AKfycbw91vd-tqIxM5c2hUu5EhARibTTzJDYqS6jpi_KjfpPzBLyzRsxg6EnLhbjjrZ-EiM/exec';
+const String baseUrl = 'https://script.google.com/macros/s/AKfycbyH06ggywIMV_mjf0Aa8ajwXU3YNnf_ULwfeXkuB5FuMVFOKVwteWRjqPxAVDbmO8_Y/exec';
 
 /// 🔹 Enviar un nuevo prompt (acción: 'addPrompt') usando POST
 Future<String> enviarPrompt({
@@ -151,146 +151,220 @@ Future<List<Map<String, dynamic>>> consultarPromptsPorContextoYProposito(
 }
 
 //Agregado por cambio del Script para estas dos funciones.
-
-/// ✅ NUEVO: Actualizar un prompt por ID
 Future<bool> actualizarPrompt({
   required String id,
   required String nuevoTexto,
 }) async {
-  final response = await http.post(Uri.parse(baseUrl), body: {
-    'action': 'updatePrompt',
-    'idPrompt': id,
-    'nuevoTexto': nuevoTexto,
-  });
+  try {
+    // Primera solicitud
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      body: {
+        'action': 'updatePrompt',
+        'idPrompt': id,
+        'nuevoTexto': nuevoTexto,
+      },
+    ).timeout(const Duration(seconds: 15));
 
-  // Los debugPrint solo se ejecutarán en modo depuración
-  if (kDebugMode) {
-    debugPrint('--- Appscript Response Debug ---');
-    debugPrint('Response Status Code: ${response.statusCode}');
-    debugPrint('Response Body: ${response.body}');
-    debugPrint('--- End Appscript Response Debug ---');
-  }
-
-  // Analizamos la respuesta JSON del backend para determinar el éxito y ver los mensajes/logs
-  if (response.statusCode == 200) {
-    try {
-      // Intentamos decodificar la respuesta JSON
-      final responseData = jsonDecode(response.body);
-
-      // Verificamos la clave 'success' que esperamos del script de Appscript
-      // Añadimos verificaciones robustas para evitar errores si la respuesta no es un mapa o no tiene la clave
-      if (responseData != null && responseData is Map && responseData.containsKey('success') && responseData['success'] == true) {
-        // Los debugPrint solo se ejecutarán en modo depuración
-        if (kDebugMode) {
-          debugPrint('Backend reported success = true.');
-          // Opcional: si el script incluyó un mensaje en la respuesta
-          if(responseData.containsKey('message') && responseData['message'] != null) {
-            debugPrint('Backend message: ${responseData['message']}');
-          }
-          // Opcional: si el script incluyó los logs en la respuesta, imprímelos
-          if(responseData.containsKey('logs') && responseData['logs'] != null) {
-            debugPrint('Backend logs: ${responseData['logs']}');
-          }
-        }
-        return true; // Indica éxito basado en la respuesta JSON del backend
-      } else {
-        // Los debugPrint solo se ejecutarán en modo depuración
-        if (kDebugMode) {
-          // Si la respuesta JSON no tiene success: true, o falta la clave
-          debugPrint('Backend did not report success = true.');
-          if(responseData != null && responseData is Map && responseData.containsKey('message') && responseData['message'] != null) {
-            debugPrint('Backend error message: ${responseData['message']}');
-          }
-          if(responseData != null && responseData is Map && responseData.containsKey('logs') && responseData['logs'] != null) {
-            debugPrint('Backend logs: ${responseData['logs']}');
-          } else {
-            // Si la respuesta no tiene ni success=true ni un mensaje/logs claro, mostramos el cuerpo crudo
-            debugPrint('Backend response structure unexpected. Raw body: ${response.body}');
-          }
-        }
-        return false; // Indica fallo basado en la respuesta JSON del backend
-      }
-    } catch (e) {
-      // Los debugPrint solo se ejecutarán en modo depuración
-      if (kDebugMode) {
-        // Si hubo un error al decodificar el JSON (por ejemplo, si la respuesta no es JSON)
-        debugPrint('Error parsing backend response JSON: $e');
-        debugPrint('Raw response body was: ${response.body}'); // Vuelve a imprimir el cuerpo crudo por si acaso
-      }
-      // Considera mostrar un error genérico al usuario si ocurre esto (respuesta inesperada del servidor)
-      return false; // Fallo al procesar la respuesta del backend
-    }
-  } else {
-    // Los debugPrint solo se ejecutarán en modo depuración
     if (kDebugMode) {
-      // Si el código de estado HTTP no fue 200 (ej: 404, 500, etc.)
-      debugPrint('HTTP Error Status Code: ${response.statusCode}');
-      // Imprimir el cuerpo de la respuesta aunque no sea 200, por si contiene detalles del error
-      debugPrint('Raw response body: ${response.body}');
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
     }
-    // Considera mostrar un error de conexión o servidor al usuario
-    return false; // Indica fallo basado en el código de estado HTTP
+
+    // Manejar redirección (código 302)
+    if (response.statusCode == 302) {
+      // Obtener la URL de redirección del encabezado Location
+      String? redirectUrl = response.headers['location'];
+
+      // Si no está en los encabezados, intentar extraerla del cuerpo HTML
+      if (redirectUrl == null && response.body.contains('HREF="')) {
+        final hrefMatch = RegExp(r'HREF="([^"]+)"').firstMatch(response.body);
+        if (hrefMatch != null && hrefMatch.groupCount >= 1) {
+          redirectUrl = hrefMatch.group(1);
+        }
+      }
+
+      if (redirectUrl != null) {
+        if (kDebugMode) {
+          debugPrint('Siguiendo redirección a: $redirectUrl');
+        }
+
+        // Hacer la segunda solicitud a la URL de redirección
+        final redirectResponse = await http.get(
+          Uri.parse(redirectUrl),
+        ).timeout(const Duration(seconds: 15));
+
+        if (kDebugMode) {
+          debugPrint('Redirect Response Status: ${redirectResponse.statusCode}');
+          debugPrint('Redirect Response Body: ${redirectResponse.body}');
+        }
+
+        // Procesar la respuesta de la redirección
+        if (redirectResponse.statusCode == 200) {
+          try {
+            final responseData = jsonDecode(redirectResponse.body);
+            return responseData != null &&
+                responseData is Map &&
+                responseData.containsKey('success') &&
+                responseData['success'] == true;
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('Error decodificando JSON después de redirección: $e');
+            }
+            return false;
+          }
+        }
+      }
+    } else if (response.statusCode == 200) {
+      // Procesar respuesta normal (sin redirección)
+      final responseData = jsonDecode(response.body);
+      return responseData != null &&
+          responseData is Map &&
+          responseData.containsKey('success') &&
+          responseData['success'] == true;
+    }
+
+    return false;
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('Error en actualizarPrompt: $e');
+    }
+    return false;
   }
 }
-
 /// ✅ NUEVO: Eliminar un prompt por ID
 Future<bool> eliminarPrompt({required String id}) async {
-  // Implementación similar a actualizarPrompt, pero para eliminar
-  // Es buena práctica también analizar la respuesta JSON del backend para confirmar el éxito.
-  final response = await http.post(Uri.parse(baseUrl), body: {
-    'action': 'deletePrompt',
-    // CAMBIO AQUI: Cambiar 'idPrompt' a 'id' para coincidir con el script de Apps Script
-    'id': id, // <--- **CAMBIO IMPORTANTE** (Este cambio ya estaba, lo mantengo)
-  });
+  try {
+    // Primera solicitud
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      body: {
+        'action': 'deletePrompt',
+        'id': id,
+      },
+    ).timeout(const Duration(seconds: 15));
 
-  // Los debugPrint solo se ejecutarán en modo depuración
-  if (kDebugMode) {
-    debugPrint('--- Appscript Delete Response Debug ---');
-    debugPrint('Response Status Code: ${response.statusCode}');
-    debugPrint('Response Body: ${response.body}');
-    debugPrint('--- End Appscript Delete Response Debug ---');
-  }
+    // Los debugPrint solo se ejecutarán en modo depuración
+    if (kDebugMode) {
+      debugPrint('--- Appscript Delete Response Debug ---');
+      debugPrint('Response Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+      debugPrint('--- End Appscript Delete Response Debug ---');
+    }
 
-  if (response.statusCode == 200) {
-    try {
-      final responseData = jsonDecode(response.body);
-      if (responseData != null && responseData is Map && responseData.containsKey('success') && responseData['success'] == true) {
-        // Los debugPrint solo se ejecutarán en modo depuración
+    // Manejar redirección (código 302)
+    if (response.statusCode == 302) {
+      // Obtener la URL de redirección del encabezado Location
+      String? redirectUrl = response.headers['location'];
+
+      // Si no está en los encabezados, intentar extraerla del cuerpo HTML
+      if (redirectUrl == null && response.body.contains('HREF="')) {
+        final hrefMatch = RegExp(r'HREF="([^"]+)"').firstMatch(response.body);
+        if (hrefMatch != null && hrefMatch.groupCount >= 1) {
+          redirectUrl = hrefMatch.group(1);
+        }
+      }
+
+      if (redirectUrl != null) {
         if (kDebugMode) {
-          debugPrint('Backend reported delete success = true.');
-          if(responseData.containsKey('message') && responseData['message'] != null) {
-            debugPrint('Backend message: ${responseData['message']}');
+          debugPrint('Siguiendo redirección a: $redirectUrl');
+        }
+
+        // Hacer la segunda solicitud a la URL de redirección
+        final redirectResponse = await http.get(
+          Uri.parse(redirectUrl),
+        ).timeout(const Duration(seconds: 15));
+
+        if (kDebugMode) {
+          debugPrint('Redirect Response Status: ${redirectResponse.statusCode}');
+          debugPrint('Redirect Response Body: ${redirectResponse.body}');
+        }
+
+        // Procesar la respuesta de la redirección
+        if (redirectResponse.statusCode == 200) {
+          try {
+            final responseData = jsonDecode(redirectResponse.body);
+            if (responseData != null &&
+                responseData is Map &&
+                responseData.containsKey('success') &&
+                responseData['success'] == true) {
+
+              if (kDebugMode) {
+                debugPrint('Backend reported delete success = true.');
+                if(responseData.containsKey('message') && responseData['message'] != null) {
+                  debugPrint('Backend message: ${responseData['message']}');
+                }
+              }
+              return true;
+            } else {
+              if (kDebugMode) {
+                debugPrint('Backend reported delete success = false after redirect.');
+                if(responseData != null && responseData is Map && responseData.containsKey('message') && responseData['message'] != null) {
+                  debugPrint('Backend error message: ${responseData['message']}');
+                }
+                if(responseData != null && responseData is Map && responseData.containsKey('logs') && responseData['logs'] != null) {
+                  debugPrint('Backend logs: ${responseData['logs']}');
+                }
+              }
+              return false;
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('Error decodificando JSON después de redirección: $e');
+              debugPrint('Raw response body was: ${redirectResponse.body}');
+            }
+            return false;
           }
         }
-        return true;
-      } else {
-        // Los debugPrint solo se ejecutarán en modo depuración
+      }
+    } else if (response.statusCode == 200) {
+      // Procesamiento normal (sin redirección)
+      try {
+        final responseData = jsonDecode(response.body);
+        if (responseData != null &&
+            responseData is Map &&
+            responseData.containsKey('success') &&
+            responseData['success'] == true) {
+
+          if (kDebugMode) {
+            debugPrint('Backend reported delete success = true.');
+            if(responseData.containsKey('message') && responseData['message'] != null) {
+              debugPrint('Backend message: ${responseData['message']}');
+            }
+          }
+          return true;
+        } else {
+          if (kDebugMode) {
+            debugPrint('Backend reported delete success = false.');
+            if(responseData != null && responseData is Map && responseData.containsKey('message') && responseData['message'] != null) {
+              debugPrint('Backend error message: ${responseData['message']}');
+            }
+            if(responseData != null && responseData is Map && responseData.containsKey('logs') && responseData['logs'] != null) {
+              debugPrint('Backend logs: ${responseData['logs']}');
+            } else {
+              debugPrint('Backend delete response structure unexpected. Raw body: ${response.body}');
+            }
+          }
+          return false;
+        }
+      } catch (e) {
         if (kDebugMode) {
-          debugPrint('Backend reported delete success = false.');
-          if(responseData != null && responseData is Map && responseData.containsKey('message') && responseData['message'] != null) {
-            debugPrint('Backend error message: ${responseData['message']}');
-          }
-          if(responseData != null && responseData is Map && responseData.containsKey('logs') && responseData['logs'] != null) {
-            debugPrint('Backend logs: ${responseData['logs']}');
-          } else {
-            debugPrint('Backend delete response structure unexpected. Raw body: ${response.body}');
-          }
+          debugPrint('Error parsing backend delete response JSON: $e');
+          debugPrint('Raw response body was: ${response.body}');
         }
         return false;
       }
-    } catch (e) {
-      // Los debugPrint solo se ejecutarán en modo depuración
-      if (kDebugMode) {
-        debugPrint('Error parsing backend delete response JSON: $e');
-        debugPrint('Raw response body was: ${response.body}');
-      }
-      return false;
     }
-  } else {
-    // Los debugPrint solo se ejecutarán en modo depuración
+
+    // Si llegamos aquí, es porque no se procesó correctamente ni la respuesta directa ni la redirección
     if (kDebugMode) {
-      debugPrint('HTTP Error Delete Status Code: ${response.statusCode}');
-      debugPrint('Raw response body: ${response.body}');
+      debugPrint('No se pudo procesar la respuesta ni la redirección');
+    }
+    return false;
+  } catch (e) {
+    // Captura cualquier excepción durante todo el proceso
+    if (kDebugMode) {
+      debugPrint('Error en eliminarPrompt: $e');
     }
     return false;
   }

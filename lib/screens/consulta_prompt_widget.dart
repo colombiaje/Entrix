@@ -190,22 +190,39 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
               fillColor: propositoSeleccionado == null ? Colors.red[100] : Colors.green[100],
             ),
             value: propositoSeleccionado,
+
+            //...12
             items: propositos.map((p) {
               final primeraPalabra = p.split(' ').first;
               final resto = p.split(' ').skip(1).join(' ');
+
               return DropdownMenuItem(
                 value: p,
-                child: RichText(
-                  text: TextSpan(
-                    style: const TextStyle(color: Colors.black),
-                    children: [
-                      TextSpan(text: '$primeraPalabra ', style: const TextStyle(color: Colors.blueAccent)),
-                      TextSpan(text: resto),
-                    ],
+                child: Flexible( // <-- Este truco mágico
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      maxWidth: 400, // Máximo 400, pero puede achicarse dinámico
+                    ),
+                    child: RichText(
+                      softWrap: true,
+                      text: TextSpan(
+                        style: const TextStyle(color: Colors.black),
+                        children: [
+                          TextSpan(
+                            text: '$primeraPalabra ',
+                            style: const TextStyle(color: Colors.blueAccent),
+                          ),
+                          TextSpan(text: resto),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               );
             }).toList(),
+
+            //...12
+
             onChanged: (value) {
               setState(() {
                 propositoSeleccionado = value;
@@ -248,33 +265,41 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              TextButton.icon(
-                                onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: promptTexto));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Texto copiado al portapapeles')),
-                                  );
-                                },
-                                icon: const Icon(Icons.copy, size: 18),
-                                label: const Text('Copiar'),
-                              ),
-                              const SizedBox(width: 8),
-                              TextButton.icon(
-                                onPressed: () => _mostrarDialogoEdicion(id, promptTexto),
-                                icon: const Icon(Icons.edit, size: 18),
-                                label: const Text('Editar'),
-                              ),
-                              const SizedBox(width: 8),
-                              TextButton.icon(
-                                onPressed: () => _confirmarEliminacion(id),
-                                icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-                                label: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
+                          //...11
+
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton.icon(
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: promptTexto));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Texto copiado al portapapeles')),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.copy, size: 18),
+                                  label: const Text('Copiar'),
+                                ),
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  onPressed: () => _mostrarDialogoEdicion(id, promptTexto),
+                                  icon: const Icon(Icons.edit, size: 18),
+                                  label: const Text('Editar'),
+                                ),
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  onPressed: () => _confirmarEliminacion(id),
+                                  icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                                  label: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
                           ),
+
+
+                          //...11
                         ],
                       ),
                     ),
