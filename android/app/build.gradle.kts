@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.entrix"
+    namespace = "com.example.entrix_sheets"  // Cambiar de "com.example.entrix"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,8 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.entrix"
+        applicationId = "com.example.entrix_sheets"  // Cambiar de "com.example.entrix"
+
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

@@ -12,7 +12,7 @@ class EntrixApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Entrix',
+      title: 'Entrix Sheets',
       theme: ThemeData(primarySwatch: Colors.indigo),
       home: EntrixTabsScreen(),
     );

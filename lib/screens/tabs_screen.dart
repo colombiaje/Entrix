@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:entrix/screens/crear_prompt_widget.dart';
-import 'package:entrix/screens/consulta_prompt_widget.dart';
+import 'package:entrix_sheets/screens/crear_prompt_widget.dart';
+import 'package:entrix_sheets/screens/consulta_prompt_widget.dart';
 
 class EntrixTabsScreen extends StatelessWidget {
   const EntrixTabsScreen({super.key});
