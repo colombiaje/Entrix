@@ -11,7 +11,7 @@ class EntrixTabsScreen extends StatelessWidget {
       length: 2, // Dos pestañas
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Entrix'),
+          title: const Text('Entrix Sheets'),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Crear Prompt'),
