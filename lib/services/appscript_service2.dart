@@ -50,29 +50,28 @@ Future<Map<String, List<String>>> obtenerOpcionesUnicas() async {
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
+      final data = jsonDecode(response.body);
+      // Asegurarse de que las claves existen y son del tipo correcto antes de convertir a List<String>
       return {
-        'contexto': (data.containsKey('contexto') && data['contexto'] is List)
-            ? List<String>.from((data['contexto'] as List).whereType<String>())
-            : [],
-        'proposito': (data.containsKey('proposito') && data['proposito'] is List)
-            ? List<String>.from((data['proposito'] as List).whereType<String>())
-            : [],
+        'contexto': (data != null && data is Map && data.containsKey('contexto') && data['contexto'] is List)
+            ? List<String>.from(data['contexto']) : [],
+        'proposito': (data != null && data is Map && data.containsKey('proposito') && data['proposito'] is List)
+            ? List<String>.from(data['proposito']) : [],
       };
     } else {
+      // Los debugPrint solo se ejecutarán en modo depuración
       if (kDebugMode) {
         debugPrint('Error getting unique options: Status ${response.statusCode}, Body: ${response.body}');
       }
       throw Exception('Error del servidor: ${response.statusCode}');
     }
   } catch (e) {
+    // Los debugPrint solo se ejecutarán en modo depuración
     if (kDebugMode) {
       debugPrint('Exception getting unique options: $e');
     }
     throw Exception('Error al obtener opciones únicas: $e');
   }
-
 }
 
 /// 🔹 Agrupa los propósitos por contexto (de forma eficiente con el JSON)
