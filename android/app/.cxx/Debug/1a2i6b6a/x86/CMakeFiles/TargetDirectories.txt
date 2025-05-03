@@ -1,2 +1,0 @@
-C:/Mega/Meerkat/Flutter nuevas/Entrix con Google Sheets3/android/app/.cxx/Debug/1a2i6b6a/x86/CMakeFiles/edit_cache.dir
-C:/Mega/Meerkat/Flutter nuevas/Entrix con Google Sheets3/android/app/.cxx/Debug/1a2i6b6a/x86/CMakeFiles/rebuild_cache.dir
