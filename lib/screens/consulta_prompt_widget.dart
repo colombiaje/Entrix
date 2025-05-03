@@ -176,6 +176,14 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
               setState(() {
                 contextoSeleccionado = value;
                 propositoSeleccionado = null;
+                // === Inicio Debug ===
+                debugPrint('--- DEBUG: Consultando Propósitos ---');
+                debugPrint('Contexto Seleccionado (Value): "$value"'); // Nota las comillas para ver espacios
+                debugPrint('Tipo de Contexto Seleccionado: ${value.runtimeType}');
+                debugPrint('Mapa propositosPorContexto está vacío? ${propositosPorContexto.isEmpty}');
+                debugPrint('Claves disponibles en propositosPorContexto: ${propositosPorContexto.keys.toList()}'); // Lista las claves disponibles
+                debugPrint('El mapa contiene la clave "$value"? ${propositosPorContexto.containsKey(value)}'); // Verifica si la clave existe
+                // === Fin Debug ===
                 propositos = propositosPorContexto[value] ?? [];
                 propositos.sort();
                 promptsEncontrados = [];
