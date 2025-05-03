@@ -1,0 +1,2 @@
+C:/Mega/Meerkat/Flutter/Apps nuevas/Entrix/android/app/.cxx/Debug/c6u4j464/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Mega/Meerkat/Flutter/Apps nuevas/Entrix/android/app/.cxx/Debug/c6u4j464/armeabi-v7a/CMakeFiles/rebuild_cache.dir
