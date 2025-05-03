@@ -59,9 +59,9 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
       });
     } catch (e) {
       setState(() => cargando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al consultar: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al consultar: $e')));
     }
   }
 
@@ -70,21 +70,25 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
 
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Prompt'),
-        content: TextField(
-          controller: controller,
-          maxLines: 5,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
-        ),
-        actions: [
-          TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.pop(context, false)),
-          ElevatedButton(
-            child: const Text('Guardar'),
-            onPressed: () => Navigator.pop(context, true),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Editar Prompt'),
+            content: TextField(
+              controller: controller,
+              maxLines: 5,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Cancelar'),
+                onPressed: () => Navigator.pop(context, false),
+              ),
+              ElevatedButton(
+                child: const Text('Guardar'),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmado == true) {
@@ -114,27 +118,31 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
   Future<void> _confirmarEliminacion(String id) async {
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('¿Eliminar prompt?'),
-        content: const Text('Esta acción no se puede deshacer.'),
-        actions: [
-          TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.pop(context, false)),
-          ElevatedButton(
-            child: const Text('Eliminar'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('¿Eliminar prompt?'),
+            content: const Text('Esta acción no se puede deshacer.'),
+            actions: [
+              TextButton(
+                child: const Text('Cancelar'),
+                onPressed: () => Navigator.pop(context, false),
+              ),
+              ElevatedButton(
+                child: const Text('Eliminar'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmado == true) {
       final exito = await eliminarPrompt(id: id);
       if (exito) {
         buscarPrompts();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Prompt eliminado')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Prompt eliminado')));
       }
     }
   }
@@ -147,72 +155,28 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Divider(height: 40),
-          const Text('🔍 Consultar Prompts', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            '🔍 Consultar Prompts',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             decoration: InputDecoration(
               labelText: 'Contexto de uso',
               filled: true,
-              fillColor: contextoSeleccionado == null ? Colors.red[100] : Colors.green[100],
+              fillColor:
+                  contextoSeleccionado == null
+                      ? Colors.red[100]
+                      : Colors.green[100],
             ),
             value: contextoSeleccionado,
-            items: contextos.map((ctx) {
-              final primeraPalabra = ctx.split(' ').first;
-              final resto = ctx.split(' ').skip(1).join(' ');
-              return DropdownMenuItem(
-                value: ctx,
-                child: RichText(
-                  text: TextSpan(
-                    style: const TextStyle(color: Colors.black),
-                    children: [
-                      TextSpan(text: '$primeraPalabra ', style: const TextStyle(color: Colors.blueAccent)),
-                      TextSpan(text: resto),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                contextoSeleccionado = value;
-                propositoSeleccionado = null;
-                // === Inicio Debug ===
-                debugPrint('--- DEBUG: Consultando Propósitos ---');
-                debugPrint('Contexto Seleccionado (Value): "$value"'); // Nota las comillas para ver espacios
-                debugPrint('Tipo de Contexto Seleccionado: ${value.runtimeType}');
-                debugPrint('Mapa propositosPorContexto está vacío? ${propositosPorContexto.isEmpty}');
-                debugPrint('Claves disponibles en propositosPorContexto: ${propositosPorContexto.keys.toList()}'); // Lista las claves disponibles
-                debugPrint('El mapa contiene la clave "$value"? ${propositosPorContexto.containsKey(value)}'); // Verifica si la clave existe
-                // === Fin Debug ===
-                propositos = propositosPorContexto[value] ?? [];
-                propositos.sort();
-                promptsEncontrados = [];
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-              labelText: 'Propósito de uso',
-              filled: true,
-              fillColor: propositoSeleccionado == null ? Colors.red[100] : Colors.green[100],
-            ),
-            value: propositoSeleccionado,
-
-            //...12
-            items: propositos.map((p) {
-              final primeraPalabra = p.split(' ').first;
-              final resto = p.split(' ').skip(1).join(' ');
-
-              return DropdownMenuItem(
-                value: p,
-                child: Flexible( // <-- Este truco mágico
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      maxWidth: 400, // Máximo 400, pero puede achicarse dinámico
-                    ),
+            items:
+                contextos.map((ctx) {
+                  final primeraPalabra = ctx.split(' ').first;
+                  final resto = ctx.split(' ').skip(1).join(' ');
+                  return DropdownMenuItem(
+                    value: ctx,
                     child: RichText(
-                      softWrap: true,
                       text: TextSpan(
                         style: const TextStyle(color: Colors.black),
                         children: [
@@ -224,13 +188,86 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
                         ],
                       ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
+            onChanged: (value) {
+              setState(() {
+                contextoSeleccionado = value;
+                propositoSeleccionado = null;
+                // === Inicio Debug (Puedes eliminarlos después) ===
+                debugPrint('--- DEBUG: Consultando Propósitos ---');
+                debugPrint(
+                  'Contexto Seleccionado (Value): "$value"',
+                ); // Nota las comillas para ver espacios
+                debugPrint(
+                  'Tipo de Contexto Seleccionado: ${value.runtimeType}',
+                );
+                debugPrint(
+                  'Mapa propositosPorContexto está vacío? ${propositosPorContexto.isEmpty}',
+                );
+                debugPrint(
+                  'Claves disponibles en propositosPorContexto: ${propositosPorContexto.keys.toList()}',
+                ); // Lista las claves disponibles
+                debugPrint(
+                  'El mapa contiene la clave "$value"? ${propositosPorContexto.containsKey(value)}',
+                ); // Verifica si la clave existe
+                // === Fin Debug ===
+
+                propositos =
+                    propositosPorContexto[value]
+                        ?.whereType<String>()
+                        .toList() ??
+                    [];
+
+                propositos.sort();
+                promptsEncontrados = [];
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              labelText: 'Propósito de uso',
+              filled: true,
+              fillColor:
+                  propositoSeleccionado == null
+                      ? Colors.red[100]
+                      : Colors.green[100],
+            ),
+            value: propositoSeleccionado,
 
             //...12
+            items:
+                propositos.map((p) {
+                  final primeraPalabra = p.split(' ').first;
+                  final resto = p.split(' ').skip(1).join(' ');
 
+                  return DropdownMenuItem(
+                    value: p,
+                    child: Container(
+                      // Ahora el Container es el hijo directo
+                      constraints: const BoxConstraints(
+                        maxWidth: 400, // Mantenemos la restricción de ancho
+                      ),
+                      child: RichText(
+                        // Y el RichText dentro del Container
+                        softWrap: true,
+                        text: TextSpan(
+                          style: const TextStyle(color: Colors.black),
+                          children: [
+                            TextSpan(
+                              text: '$primeraPalabra ',
+                              style: const TextStyle(color: Colors.blueAccent),
+                            ),
+                            TextSpan(text: resto),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+
+            //...12
             onChanged: (value) {
               setState(() {
                 propositoSeleccionado = value;
@@ -241,83 +278,123 @@ class _PromptConsultaWidgetState extends State<PromptConsultaWidget> {
           const SizedBox(height: 20),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
-            child: cargando
-                ? const Center(child: CircularProgressIndicator())
-                : promptsEncontrados.isNotEmpty
-                ? Column(
-              key: const ValueKey('listado'),
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: promptsEncontrados.map((fila) {
-                final promptTexto = fila['prompt'];
-                final id = fila['id'].toString();
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeIn,
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  child: Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.green[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: SelectableText(
-                              promptTexto,
-                              style: const TextStyle(color: Colors.black, fontSize: 17),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          //...11
+            child:
+                cargando
+                    ? const Center(child: CircularProgressIndicator())
+                    : promptsEncontrados.isNotEmpty
+                    ? Column(
+                      key: const ValueKey('listado'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children:
+                          promptsEncontrados.map((fila) {
+                            final promptTexto = fila['prompt'];
+                            final id = fila['id'].toString();
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeIn,
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              child: Card(
+                                elevation: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green[100],
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: SelectableText(
+                                          promptTexto,
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 17,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
 
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                TextButton.icon(
-                                  onPressed: () {
-                                    Clipboard.setData(ClipboardData(text: promptTexto));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Texto copiado al portapapeles')),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.copy, size: 18),
-                                  label: const Text('Copiar'),
-                                ),
-                                const SizedBox(width: 8),
-                                TextButton.icon(
-                                  onPressed: () => _mostrarDialogoEdicion(id, promptTexto),
-                                  icon: const Icon(Icons.edit, size: 18),
-                                  label: const Text('Editar'),
-                                ),
-                                const SizedBox(width: 8),
-                                TextButton.icon(
-                                  onPressed: () => _confirmarEliminacion(id),
-                                  icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-                                  label: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
-                            ),
-                          ),
+                                      //...11
+                                      SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            TextButton.icon(
+                                              onPressed: () {
+                                                Clipboard.setData(
+                                                  ClipboardData(
+                                                    text: promptTexto,
+                                                  ),
+                                                );
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Texto copiado al portapapeles',
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              icon: const Icon(
+                                                Icons.copy,
+                                                size: 18,
+                                              ),
+                                              label: const Text('Copiar'),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            TextButton.icon(
+                                              onPressed:
+                                                  () => _mostrarDialogoEdicion(
+                                                    id,
+                                                    promptTexto,
+                                                  ),
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                size: 18,
+                                              ),
+                                              label: const Text('Editar'),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            TextButton.icon(
+                                              onPressed:
+                                                  () =>
+                                                      _confirmarEliminacion(id),
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                size: 18,
+                                                color: Colors.red,
+                                              ),
+                                              label: const Text(
+                                                'Eliminar',
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
 
-
-                          //...11
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            )
-                : contextoSeleccionado != null && propositoSeleccionado != null
-                ? const Text('No se encontraron prompts con esos filtros.')
-                : const SizedBox.shrink(),
+                                      //...11
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    )
+                    : contextoSeleccionado != null &&
+                        propositoSeleccionado != null
+                    ? const Text('No se encontraron prompts con esos filtros.')
+                    : const SizedBox.shrink(),
           ),
         ],
       ),
