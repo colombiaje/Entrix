@@ -35,3 +35,12 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
 
+      - name: Comment with deployment link
+        if: success()
+        run: |
+          commit_sha=$(git rev-parse HEAD)
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -X POST \
+            -d "{\"body\": \"✅ Despliegue completado: https://<USUARIO>.github.io/<REPO>/\"}" \
+            https://api.github.com/repos/${{ github.repository }}/commits/$commit_sha/comments
+
